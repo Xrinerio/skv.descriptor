@@ -4,7 +4,7 @@
   "main": "main.js",
   "type": "module",
   "scripts": {
-    "start": "node main.js"
+    "start": "node -r dotenv/config main.js"
   },
   "author": "Xrinerio",
   "license": "ISC",
@@ -13,7 +13,7 @@
     "together-ai": "^0.13.0"
   },
   "devDependencies": {
-    "dotenv": "^16.4.7",
-    "tiktoken": "^1.0.20"
+    "better-docs": "^2.7.3",
+    "dotenv": "^16.4.7"
   }
 }

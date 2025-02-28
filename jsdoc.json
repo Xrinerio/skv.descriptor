@@ -1,0 +1,23 @@
+{
+  "source": {
+    "include": ["out-js"],
+    "exclude": ["node_modules", "dist"]
+  },
+  "opts": {
+    "destination": "docs",
+    "template": "node_modules/better-docs",
+    "recurse": true,
+    "verbose": true
+  },
+  "plugins": ["node_modules/better-docs/category"],
+  "templates": {
+    "better-docs": {
+      "name": "Documentation",
+      "hideGenerator": false,
+      "includeDate": false
+    }
+  },
+  "tags": {
+    "allowUnknownTags": true
+  }
+}
