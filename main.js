@@ -1,7 +1,6 @@
 import Together from "together-ai";
 import fs from "fs/promises";
 import path from "path";
-import tiktoken from "tiktoken";
 
 const together = new Together({ apiKey: process.env.TOGETHER_KEY });
 
@@ -19,6 +18,7 @@ Requirements:
 - Respond only with JavaScript code (do not wrap it in code blocks like '''javascript ... ''').
 - Write clear and simple comments in English, ensuring that an average developer can easily understand them.
 - Include examples when necessary to illustrate usage.
+- If the code is already documented, re-document it.
 
 Your goal is to create readable and user-friendly JSDoc documentation that enhances code comprehension.
 `;
@@ -42,10 +42,11 @@ Your goal is to create readable and user-friendly JSDoc documentation that enhan
 
   const response_answer = response.choices[0].message.content;
   const data = response_answer.trim();
-  const newFilePath = path.join(
-    path.dirname(filepath).replace("test-js", "out-js"),
-    path.basename(filepath)
-  );
+
+  // Путь для выходного файла, всегда используя ./out-js/
+  const relativePath = path.relative(process.cwd(), filepath);
+  const newFilePath = path.join("./out-js", relativePath);
+
   await fs.mkdir(path.dirname(newFilePath), { recursive: true });
   await fs.writeFile(newFilePath, data, "utf-8");
   console.log(`End comment ${filepath}`);
@@ -56,7 +57,7 @@ async function makeComments(files) {
   try {
     const promises = files.map((file) => {
       console.log(`Start comment ${file}`);
-      aiResponse(file);
+      return aiResponse(file);
     });
     await Promise.allSettled(promises);
   } catch (err) {
@@ -71,9 +72,15 @@ async function readFiles(dirpath) {
     entries.map(async (entry) => {
       const fullPath = path.join(dirpath, entry.name);
       if (entry.isDirectory()) {
-        const outDirPath = fullPath.replace("test-js", "out-js");
-        await fs.mkdir(outDirPath, { recursive: true });
-        return await readFiles(fullPath);
+        const nestedFiles = await readFiles(fullPath);
+        if (nestedFiles.length === 0) {
+          const newDirPath = path.join(
+            "./out-js",
+            path.relative(process.cwd(), fullPath)
+          );
+          await fs.mkdir(newDirPath, { recursive: true });
+        }
+        return nestedFiles;
       } else {
         return fullPath;
       }
@@ -82,19 +89,6 @@ async function readFiles(dirpath) {
   return files.flat();
 }
 
-const files = await readFiles("./test-js/");
-//makeComments(files);
-
-async function getTokens(filepath) {
-  const encoding = tiktoken.encoding_for_model("gpt-4");
-  const file = await fs.readFile(filepath, "utf-8");
-  console.log(file.length);
-  const tokens = encoding.encode(file);
-  console.log(`Tokens - ${tokens.length}`);
-}
-
-getTokens("./test-js/systemInitBoth.js");
-// вывод в аут +
-// научить поправки
-// cmd +-?
-// макс сайз 138 строчек кода(в среднем), 3kb, 760 токенов, 2900 символов
+// Программа берёт файлы с указанной директории
+const files = await readFiles("./inputs-js/");
+makeComments(files);

@@ -4,8 +4,7 @@
   "main": "main.js",
   "type": "module",
   "scripts": {
-    "start": "node main.js",
-    "test": "node pref.js && node main.js"
+    "start": "node main.js"
   },
   "author": "Xrinerio",
   "license": "ISC",
