@@ -10,10 +10,12 @@
   "license": "ISC",
   "description": "AI-Powered JSDoc Comment Generator",
   "dependencies": {
+    "better-docs": "^2.7.3",
+    "jsdoc": "^4.0.4",
+    "open": "^10.1.0",
     "together-ai": "^0.13.0"
   },
   "devDependencies": {
-    "better-docs": "^2.7.3",
     "dotenv": "^16.4.7"
   }
 }
