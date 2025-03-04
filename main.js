@@ -63,10 +63,16 @@ async function makeComments(files) {
       console.log(`Start comment ${file}`);
       return aiResponse(file);
     });
-    await Promise.allSettled(promises);
+    await Promise.all(
+      promises.map((p) =>
+        p.catch((err) => console.error("Error processing file:", err))
+      )
+    );
   } catch (err) {
     console.error("Ошибка", err);
+    throw err;
   }
+  await generateDocs();
 }
 
 // Считывание файлов в массив
@@ -97,10 +103,9 @@ async function generateDocs() {
   const command = "jsdoc -c jsdoc.json";
   const docpath = "docs/index.html";
   await exec(command, () => {});
-  await exec(`start ${docpath}`);
+  // await exec(`start ${docpath}`);
 }
 
 // Программа берёт файлы с указанной директории
 const files = await readFiles("./inputs-js/");
 await makeComments(files);
-generateDocs();
