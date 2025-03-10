@@ -1,8 +1,7 @@
 import Together from "together-ai";
 import fs from "fs/promises";
 import path from "path";
-import child_process from "child_process";
-const { exec } = child_process;
+import { exec } from "child_process";
 
 const together = new Together({ apiKey: process.env.TOGETHER_KEY });
 
@@ -56,6 +55,8 @@ Your goal is to create readable and user-friendly JSDoc documentation that enhan
   console.log(`End comment ${filepath}`);
 }
 
+async function aiDialog() {}
+
 // Асинхронное добавление комментариев к файлам
 async function makeComments(files) {
   try {
@@ -99,11 +100,10 @@ async function readFiles(dirpath) {
   return files.flat();
 }
 
+// Гегерация документация JSdoc
 async function generateDocs() {
   const command = "jsdoc -c jsdoc.json";
-  const docpath = "docs/index.html";
   await exec(command, () => {});
-  // await exec(`start ${docpath}`);
 }
 
 // Программа берёт файлы с указанной директории
