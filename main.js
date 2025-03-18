@@ -2,14 +2,26 @@ import Together from "together-ai";
 import fs from "fs/promises";
 import path from "path";
 import { exec } from "child_process";
+import { createInterface } from "node:readline/promises"; // Используем промис-версию readline
+import { stdin as input, stdout as output } from "node:process";
 
 const together = new Together({ apiKey: process.env.TOGETHER_KEY });
+
+function normalizeCode(code) {
+  // Удаляем однострочные комментарии (// ...)
+  code = code.replace(/\/\/.*$/gm, "");
+  // Удаляем многострочные комментарии (/* ... */)
+  code = code.replace(/\/\*[\s\S]*?\*\//g, "");
+  // Удаляем все пробелы и переносы строк
+  code = code.replace(/\s+/g, "");
+  return code;
+}
 
 // Запрос к API DeepSeek
 async function aiResponse(filepath) {
   const fileContent = await fs.readFile(filepath, "utf-8");
 
-  const sys_prompt = `
+  const sysPrompt = `
 You are a professional code analyst specializing in JavaScript.
 Your task is to analyze the provided JavaScript code and add comments in JSDoc format.
 
@@ -24,17 +36,19 @@ Requirements:
 Your goal is to create readable and user-friendly JSDoc documentation that enhances code comprehension.
 `;
 
+  const messages = [
+    {
+      role: "system",
+      content: sysPrompt,
+    },
+    {
+      role: "user",
+      content: fileContent,
+    },
+  ];
+
   const response = await together.chat.completions.create({
-    messages: [
-      {
-        role: "system",
-        content: sys_prompt,
-      },
-      {
-        role: "user",
-        content: fileContent,
-      },
-    ],
+    messages: messages,
     model: "deepseek-ai/DeepSeek-V3",
     max_tokens: null,
     temperature: 0.1,
@@ -43,8 +57,7 @@ Your goal is to create readable and user-friendly JSDoc documentation that enhan
     top_k: 50,
   });
 
-  const response_answer = response.choices[0].message.content;
-  const data = response_answer.trim();
+  const data = response.choices[0].message.content.trim();
 
   // Путь для выходного файла, всегда используя ./out-js/
   const relativePath = path.relative(process.cwd(), filepath);
@@ -53,27 +66,93 @@ Your goal is to create readable and user-friendly JSDoc documentation that enhan
   await fs.mkdir(path.dirname(newFilePath), { recursive: true });
   await fs.writeFile(newFilePath, data, "utf-8");
   console.log(`End comment ${filepath}`);
+  await messages.push({
+    role: "system",
+    content: data,
+  });
+  return {
+    file: filepath,
+    message: messages,
+  };
 }
 
-async function aiDialog() {}
+async function aiEdit(dialog) {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  const newmessage = await rl.question("Write edit message: ");
+  rl.close();
+  dialog.message.push({
+    role: "user",
+    content: newmessage,
+  });
+  console.log("Successful");
+
+  const response = await together.chat.completions.create({
+    messages: dialog.message,
+    model: "deepseek-ai/DeepSeek-V3",
+    max_tokens: null,
+    temperature: 0.1,
+    timeout: null,
+    top_p: 0.5,
+    top_k: 50,
+  });
+
+  const data = response.choices[0].message.content.trim();
+
+  const relativePath = path.relative(process.cwd(), dialog.file);
+  const newFilePath = path.join("./out-js", relativePath);
+
+  await fs.writeFile(newFilePath, data, "utf-8");
+  console.log(`End comment ${dialog.file}`);
+}
+
+async function startEdit(dialogs) {
+  // путь к ауту сделать надо
+  console.warn("Commented files(write number to edit or 0 to exit):");
+  console.log("0 - exit");
+  for (let i = 1; i - 1 < dialogs.length; i++) {
+    console.log(
+      `${i} - \x1B]8;;file://${path.resolve(
+        "./out-js",
+        dialogs[i - 1].file
+      )}\x1B\\${dialogs[i - 1].file}\x1B]8;;\x1B\\`
+    );
+  }
+
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  const select = await rl.question("Take a number: ");
+  rl.close();
+  console.log(`You take - ${dialogs[select - 1].file}`);
+  aiEdit(dialogs[select - 1]);
+}
 
 // Асинхронное добавление комментариев к файлам
 async function makeComments(files) {
-  try {
-    const promises = files.map((file) => {
-      console.log(`Start comment ${file}`);
-      return aiResponse(file);
-    });
-    await Promise.all(
-      promises.map((p) =>
-        p.catch((err) => console.error("Error processing file:", err))
-      )
-    );
-  } catch (err) {
-    console.error("Ошибка", err);
-    throw err;
-  }
+  const promises = files.map((file) => {
+    console.log(`Start comment ${file}`);
+    return aiResponse(file);
+  });
+
+  const messages = await Promise.all(
+    promises.map((p) =>
+      p.catch((err) => console.error("Error processing file:", err))
+    )
+  );
+
+  await fs.writeFile(
+    path.join(process.cwd(), "log-last"),
+    JSON.stringify(messages, null, 4),
+    "utf-8"
+  );
   await generateDocs();
+  startEdit(messages);
 }
 
 // Считывание файлов в массив
@@ -109,3 +188,8 @@ async function generateDocs() {
 // Программа берёт файлы с указанной директории
 const files = await readFiles("./inputs-js/");
 await makeComments(files);
+
+//todo
+//проверку чтобы в окончательном файле был весь данный
+//диалог
+//понять куда делся таймаут
