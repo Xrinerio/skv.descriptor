@@ -7,34 +7,11 @@ import { stdin as input, stdout as output } from "node:process";
 
 const together = new Together({ apiKey: process.env.TOGETHER_KEY });
 
-function normalizeCode(code) {
-  // Удаляем однострочные комментарии (// ...)
-  code = code.replace(/\/\/.*$/gm, "");
-  // Удаляем многострочные комментарии (/* ... */)
-  code = code.replace(/\/\*[\s\S]*?\*\//g, "");
-  // Удаляем все пробелы и переносы строк
-  code = code.replace(/\s+/g, "");
-  return code;
-}
+const sysPrompt = await fs.readFile("prompt.md", "utf-8");
 
 // Запрос к API DeepSeek
 async function aiResponse(filepath) {
   const fileContent = await fs.readFile(filepath, "utf-8");
-
-  const sysPrompt = `
-You are a professional code analyst specializing in JavaScript.
-Your task is to analyze the provided JavaScript code and add comments in JSDoc format.
-
-Requirements:
-- Provide concise and direct documentation without unnecessary explanations.
-- Accepts only a JavaScript file as input.
-- Respond only with JavaScript code (do not wrap it in code blocks like '''javascript ... ''').
-- Write clear and simple comments in English, ensuring that an average developer can easily understand them.
-- Include examples when necessary to illustrate usage.
-- If the code is already documented, re-document it.
-
-Your goal is to create readable and user-friendly JSDoc documentation that enhances code comprehension.
-`;
 
   const messages = [
     {
@@ -110,7 +87,6 @@ async function aiEdit(dialog) {
 }
 
 async function startEdit(dialogs) {
-  // путь к ауту сделать надо
   console.warn("Commented files(write number to edit or 0 to exit):");
   console.log("0 - exit");
   for (let i = 1; i - 1 < dialogs.length; i++) {
@@ -146,11 +122,6 @@ async function makeComments(files) {
     )
   );
 
-  await fs.writeFile(
-    path.join(process.cwd(), "log-last"),
-    JSON.stringify(messages, null, 4),
-    "utf-8"
-  );
   await generateDocs();
   startEdit(messages);
 }
