@@ -2,8 +2,7 @@ import Together from "together-ai";
 import fs from "fs/promises";
 import path from "path";
 import { exec } from "child_process";
-import { createInterface } from "node:readline/promises"; // Используем промис-версию readline
-import { stdin as input, stdout as output } from "node:process";
+import { createInterface } from "node:readline/promises";
 
 const together = new Together({ apiKey: process.env.TOGETHER_KEY });
 
@@ -42,11 +41,14 @@ async function aiResponse(filepath) {
 
   await fs.mkdir(path.dirname(newFilePath), { recursive: true });
   await fs.writeFile(newFilePath, data, "utf-8");
+
   console.log(`End comment ${filepath}`);
+
   await messages.push({
     role: "system",
     content: data,
   });
+
   return {
     file: filepath,
     message: messages,
@@ -65,7 +67,7 @@ async function aiEdit(dialog) {
     role: "user",
     content: newmessage,
   });
-  console.log("Successful");
+  console.log("Editing...");
 
   const response = await together.chat.completions.create({
     messages: dialog.message,
@@ -84,35 +86,54 @@ async function aiEdit(dialog) {
 
   await fs.writeFile(newFilePath, data, "utf-8");
   console.log(`End comment ${dialog.file}`);
+  await generateDocs();
+
+  dialog.message.push({
+    role: "system",
+    content: data,
+  });
+
+  return dialog;
 }
 
 async function startEdit(dialogs) {
-  console.warn("Commented files(write number to edit or 0 to exit):");
-  console.log("0 - exit");
-  for (let i = 1; i - 1 < dialogs.length; i++) {
-    console.log(
-      `${i} - \x1B]8;;file://${path.resolve(
-        "./out-js",
-        dialogs[i - 1].file
-      )}\x1B\\${dialogs[i - 1].file}\x1B]8;;\x1B\\`
-    );
+  while (true) {
+    console.warn("Commented files(write number to edit or 0 to exit):");
+    console.log("0 - exit");
+
+    for (let i = 1; i - 1 < dialogs.length; i++) {
+      console.log(
+        `${i} - \x1B]8;;file://${path.resolve(
+          "./out-js",
+          dialogs[i - 1].file
+        )}\x1B\\${dialogs[i - 1].file}\x1B]8;;\x1B\\`
+      );
+    }
+
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    const select = await rl.question("Take a number: ");
+
+    if (select == 0) {
+      rl.close();
+      break;
+    }
+
+    rl.close();
+    console.log(`You take - ${dialogs[select - 1].file}`);
+
+    dialogs[select - 1] = await aiEdit(dialogs[select - 1]);
   }
-
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  const select = await rl.question("Take a number: ");
-  rl.close();
-  console.log(`You take - ${dialogs[select - 1].file}`);
-  aiEdit(dialogs[select - 1]);
 }
 
 // Асинхронное добавление комментариев к файлам
 async function makeComments(files) {
   const promises = files.map((file) => {
     console.log(`Start comment ${file}`);
+
     return aiResponse(file);
   });
 
@@ -123,22 +144,27 @@ async function makeComments(files) {
   );
 
   await generateDocs();
+
   startEdit(messages);
 }
 
 // Считывание файлов в массив
 async function readFiles(dirpath) {
   const entries = await fs.readdir(dirpath, { withFileTypes: true });
+
   const files = await Promise.all(
     entries.map(async (entry) => {
       const fullPath = path.join(dirpath, entry.name);
+
       if (entry.isDirectory()) {
         const nestedFiles = await readFiles(fullPath);
+
         if (nestedFiles.length === 0) {
           const newDirPath = path.join(
             "./out-js",
             path.relative(process.cwd(), fullPath)
           );
+
           await fs.mkdir(newDirPath, { recursive: true });
         }
         return nestedFiles;
@@ -154,10 +180,16 @@ async function readFiles(dirpath) {
 async function generateDocs() {
   const command = "jsdoc -c jsdoc.json";
   await exec(command, () => {});
+  await console.log(
+    `\x1B]8;;file://${path.resolve(
+      "./docs/index.html"
+    )}\x1B\\Сompleted documentation\x1B]8;;\x1B\\`
+  );
 }
 
 // Программа берёт файлы с указанной директории
 const files = await readFiles("./inputs-js/");
+
 await makeComments(files);
 
 //todo
