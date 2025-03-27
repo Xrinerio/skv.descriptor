@@ -1,3 +1,3 @@
-set TOGETHER_KEY=
+set KEY=
 node main.js
 pause
