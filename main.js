@@ -27,8 +27,8 @@ async function aiResponse(filepath) {
     messages: messages,
     model: "deepseek-ai/DeepSeek-V3",
     max_tokens: null,
-    temperature: 0.1,
     timeout: null,
+    temperature: 0.1,
     top_p: 0.5,
     top_k: 50,
   });
@@ -72,15 +72,14 @@ async function aiEdit(dialog) {
   const response = await together.chat.completions.create({
     messages: dialog.message,
     model: "deepseek-ai/DeepSeek-V3",
-    max_tokens: null,
     temperature: 0.1,
+    max_tokens: null,
     timeout: null,
     top_p: 0.5,
     top_k: 50,
   });
 
   const data = response.choices[0].message.content.trim();
-
   const relativePath = path.relative(process.cwd(), dialog.file);
   const newFilePath = path.join("./out-js", relativePath);
 
@@ -97,6 +96,7 @@ async function aiEdit(dialog) {
 }
 
 async function startEdit(dialogs) {
+  console.log(dialogs);
   while (true) {
     console.warn("Commented files(write number to edit or 0 to exit):");
     console.log("0 - exit");
@@ -138,8 +138,10 @@ async function makeComments(files) {
   });
 
   const messages = await Promise.all(
-    promises.map((p) =>
-      p.catch((err) => console.error("Error processing file:", err))
+    promises.map((p, index) =>
+      p.catch((err) => {
+        console.error(`Error processing file: ${files[index]}`, err.message);
+      })
     )
   );
 

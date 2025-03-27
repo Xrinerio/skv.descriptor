@@ -12,7 +12,7 @@
   "dependencies": {
     "better-docs": "^2.7.3",
     "jsdoc": "^4.0.4",
-    "together-ai": "^0.13.0"
+    "openai": "^4.89.1"
   },
   "devDependencies": {
     "dotenv": "^16.4.7"
