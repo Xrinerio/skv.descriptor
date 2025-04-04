@@ -5,7 +5,7 @@ import { exec } from "child_process";
 import { createInterface } from "node:readline/promises";
 import { splitLargeFile } from "./div.js";
 
-const together = new Together({ apiKey: process.env.TOGETHER_KEY });
+const together = new Together({ apiKey: process.env.KEY });
 
 const sysPrompt = await fs.readFile("prompt.md", "utf-8");
 
@@ -233,7 +233,6 @@ async function removeTempDirectory() {
 await removeTempDirectory();
 // Пример использования функции
 await splitFilesInDirectory("./inputs-js/", "./temp/");
-
 // Программа берёт файлы с указанной директории
 const files = await readFiles("./temp/");
 
