@@ -3,7 +3,7 @@ import path from "path";
 import * as babelParser from "@babel/parser";
 import { generate } from "@babel/generator";
 
-function splitLargeFile(inputFilePath, outputDir, maxFileSize = 6144) {
+export function splitLargeFile(inputFilePath, outputDir, maxFileSize = 6144) {
   const fileContent = fs.readFileSync(inputFilePath, "utf-8");
   const ast = babelParser.parse(fileContent, {
     sourceType: "module",
@@ -132,7 +132,3 @@ function splitLargeFile(inputFilePath, outputDir, maxFileSize = 6144) {
 
   console.log("File splitting completed.");
 }
-
-const inputFilePath = "inputs-js/query.js";
-const outputDir = "test-out/";
-splitLargeFile(inputFilePath, outputDir);
