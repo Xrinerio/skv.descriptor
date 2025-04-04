@@ -97,7 +97,6 @@ async function aiEdit(dialog) {
 }
 
 async function startEdit(dialogs) {
-  console.log(dialogs);
   while (true) {
     console.warn("Commented files(write number to edit or 0 to exit):");
     console.log("0 - exit");
