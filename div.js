@@ -13,7 +13,7 @@ export function splitLargeFile(inputFilePath, outputDir, maxFileSize = 6144) {
   const chunks = [];
   let currentChunk = [];
   let currentChunkSize = 0;
-  let classCreated = new Set(); // Track created classes
+  let classCreated = new Set();
 
   ast.program.body.forEach((node) => {
     const { code } = generate(node);
@@ -51,7 +51,7 @@ export function splitLargeFile(inputFilePath, outputDir, maxFileSize = 6144) {
                 if (currentChunkSize + methodSize > maxFileSize) {
                   if (currentChunk.length > 0) {
                     chunks.push(currentChunk);
-                    currentChunk = []; // Clear currentChunk only after adding it to chunks
+                    currentChunk = [];
                     currentChunkSize = 0;
                   }
                 }
@@ -86,8 +86,8 @@ export function splitLargeFile(inputFilePath, outputDir, maxFileSize = 6144) {
               });
 
               if (currentChunk.length > 0) {
-                chunks.push(currentChunk); // Ensure no duplicate addition
-                currentChunk = []; // Clear currentChunk after adding
+                chunks.push(currentChunk);
+                currentChunk = [];
               }
             }
           }
@@ -120,7 +120,7 @@ export function splitLargeFile(inputFilePath, outputDir, maxFileSize = 6144) {
             if (currentChunkSize + methodSize > maxFileSize) {
               if (currentChunk.length > 0) {
                 chunks.push(currentChunk);
-                currentChunk = []; // Clear currentChunk only after adding it to chunks
+                currentChunk = [];
                 currentChunkSize = 0;
               }
             }
@@ -155,8 +155,8 @@ export function splitLargeFile(inputFilePath, outputDir, maxFileSize = 6144) {
           });
 
           if (currentChunk.length > 0) {
-            chunks.push(currentChunk); // Ensure no duplicate addition
-            currentChunk = []; // Clear currentChunk after adding
+            chunks.push(currentChunk);
+            currentChunk = [];
           }
         }
       }
