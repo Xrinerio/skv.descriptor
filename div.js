@@ -127,7 +127,6 @@ export function splitLargeFile(inputFilePath, outputDir, maxFileSize = 6144) {
       `${inputFileName}_${index + 1}.js`
     );
     fs.writeFileSync(outputFilePath, code, "utf-8");
-    console.log(`Chunk ${index + 1} written to ${outputFilePath}`);
   });
 
   console.log("File splitting completed.");
