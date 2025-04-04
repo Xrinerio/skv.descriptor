@@ -13,6 +13,7 @@ export function splitLargeFile(inputFilePath, outputDir, maxFileSize = 6144) {
   const chunks = [];
   let currentChunk = [];
   let currentChunkSize = 0;
+  let classCreated = new Set(); // Track created classes
 
   ast.program.body.forEach((node) => {
     const { code } = generate(node);
@@ -30,44 +31,66 @@ export function splitLargeFile(inputFilePath, outputDir, maxFileSize = 6144) {
 
         if (currentClassChunkSize + methodSize > maxFileSize) {
           if (currentClassChunk.length > 0) {
-            const classChunkAst = {
-              type: "ClassDeclaration",
-              id: { ...node.id },
-              superClass: node.superClass,
-              body: {
-                type: "ClassBody",
-                body: currentClassChunk,
-              },
-            };
-            chunks.push([classChunkAst]);
-          }
-
-          const methodAssignment = {
-            type: "ExpressionStatement",
-            expression: {
-              type: "AssignmentExpression",
-              operator: "=",
-              left: {
-                type: "MemberExpression",
-                object: {
-                  type: "MemberExpression",
-                  object: { type: "Identifier", name: className },
-                  property: { type: "Identifier", name: "prototype" },
+            if (!classCreated.has(className)) {
+              const classChunkAst = {
+                type: "ClassDeclaration",
+                id: { ...node.id },
+                superClass: node.superClass,
+                body: {
+                  type: "ClassBody",
+                  body: currentClassChunk,
                 },
-                property: { type: "Identifier", name: method.key.name },
-              },
-              right: {
-                type: "FunctionExpression",
-                id: null,
-                params: method.params,
-                body: method.body,
-                async: method.async,
-                generator: method.generator,
-              },
-            },
-          };
-          chunks.push([methodAssignment]);
+              };
+              chunks.push([classChunkAst]);
+              classCreated.add(className);
+            } else {
+              currentClassChunk.forEach((method) => {
+                const { code: methodCode } = generate(method);
+                const methodSize = Buffer.byteLength(methodCode, "utf-8");
 
+                if (currentChunkSize + methodSize > maxFileSize) {
+                  if (currentChunk.length > 0) {
+                    chunks.push(currentChunk);
+                    currentChunk = []; // Clear currentChunk only after adding it to chunks
+                    currentChunkSize = 0;
+                  }
+                }
+
+                const methodAssignment = {
+                  type: "ExpressionStatement",
+                  expression: {
+                    type: "AssignmentExpression",
+                    operator: "=",
+                    left: {
+                      type: "MemberExpression",
+                      object: {
+                        type: "MemberExpression",
+                        object: { type: "Identifier", name: className },
+                        property: { type: "Identifier", name: "prototype" },
+                      },
+                      property: { type: "Identifier", name: method.key.name },
+                    },
+                    right: {
+                      type: "FunctionExpression",
+                      id: null,
+                      params: method.params,
+                      body: method.body,
+                      async: method.async,
+                      generator: method.generator,
+                    },
+                  },
+                };
+
+                currentChunk.push(methodAssignment);
+                currentChunkSize += methodSize;
+              });
+
+              if (currentChunk.length > 0) {
+                chunks.push(currentChunk); // Ensure no duplicate addition
+                currentChunk = []; // Clear currentChunk after adding
+              }
+            }
+          }
           currentClassChunk = [];
           currentClassChunkSize = 0;
         } else {
@@ -77,16 +100,65 @@ export function splitLargeFile(inputFilePath, outputDir, maxFileSize = 6144) {
       });
 
       if (currentClassChunk.length > 0) {
-        const classChunkAst = {
-          type: "ClassDeclaration",
-          id: { ...node.id },
-          superClass: node.superClass,
-          body: {
-            type: "ClassBody",
-            body: currentClassChunk,
-          },
-        };
-        chunks.push([classChunkAst]);
+        if (!classCreated.has(className)) {
+          const classChunkAst = {
+            type: "ClassDeclaration",
+            id: { ...node.id },
+            superClass: node.superClass,
+            body: {
+              type: "ClassBody",
+              body: currentClassChunk,
+            },
+          };
+          chunks.push([classChunkAst]);
+          classCreated.add(className);
+        } else {
+          currentClassChunk.forEach((method) => {
+            const { code: methodCode } = generate(method);
+            const methodSize = Buffer.byteLength(methodCode, "utf-8");
+
+            if (currentChunkSize + methodSize > maxFileSize) {
+              if (currentChunk.length > 0) {
+                chunks.push(currentChunk);
+                currentChunk = []; // Clear currentChunk only after adding it to chunks
+                currentChunkSize = 0;
+              }
+            }
+
+            const methodAssignment = {
+              type: "ExpressionStatement",
+              expression: {
+                type: "AssignmentExpression",
+                operator: "=",
+                left: {
+                  type: "MemberExpression",
+                  object: {
+                    type: "MemberExpression",
+                    object: { type: "Identifier", name: className },
+                    property: { type: "Identifier", name: "prototype" },
+                  },
+                  property: { type: "Identifier", name: method.key.name },
+                },
+                right: {
+                  type: "FunctionExpression",
+                  id: null,
+                  params: method.params,
+                  body: method.body,
+                  async: method.async,
+                  generator: method.generator,
+                },
+              },
+            };
+
+            currentChunk.push(methodAssignment);
+            currentChunkSize += methodSize;
+          });
+
+          if (currentChunk.length > 0) {
+            chunks.push(currentChunk); // Ensure no duplicate addition
+            currentChunk = []; // Clear currentChunk after adding
+          }
+        }
       }
     } else if (currentChunkSize + nodeSize > maxFileSize) {
       chunks.push(currentChunk);
