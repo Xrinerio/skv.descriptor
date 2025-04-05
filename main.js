@@ -5,7 +5,14 @@ import { exec } from "child_process";
 import { createInterface } from "node:readline/promises";
 import { splitLargeFile } from "./div.js";
 
-const together = new Together({ apiKey: process.env.KEY });
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  baseURL: "https://api.deepseek.com",
+  apiKey: process.env.KEY,
+});
+
+const together = new Together({ apiKey: process.env.KEY2 });
 
 const sysPrompt = await fs.readFile("prompt.md", "utf-8");
 
