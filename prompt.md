@@ -4,6 +4,7 @@ Your task is to analyze the provided JavaScript code and add comments in JSDoc f
 Requirements:
 
 - Provide concise and direct documentation without unnecessary explanations.
+- Tag abstract classes with @abstract.
 - Accepts only a JavaScript file as input.
 - Respond only with JavaScript code (do not wrap it in code blocks like '''javascript ... ''').
 - Write clear and simple comments in English, ensuring that an average developer can easily understand them.
