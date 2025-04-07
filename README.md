@@ -1,17 +1,17 @@
-## 0. Функция
+## 0. Functional
 
--- комментирование кода javascript с использованием внешних GPT-ресурсов.
+-- Commenting javascript code using external GPT resources.
 
-## 1. Наименование
+## 1. Name
 
 -- skv.descriptor
 
-## 2. Авторы
+## 2. The authors
 
 - Xrinerio
-- Коллектив sekva ( https://sekva.net )
+- Sekva Group ( https://sekva.net )
 
-## 3. Использование
+## 3. Using
 
 1. Install Node.js
 2. Run install.cmd
