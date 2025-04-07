@@ -3,8 +3,16 @@ import fs from "fs/promises";
 import path from "path";
 import { exec } from "child_process";
 import { createInterface } from "node:readline/promises";
+import { splitLargeFile } from "./div.js";
 
-const together = new Together({ apiKey: process.env.TOGETHER_KEY });
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  baseURL: "https://api.deepseek.com",
+  apiKey: process.env.KEY,
+});
+
+const together = new Together({ apiKey: process.env.KEY2 });
 
 const sysPrompt = await fs.readFile("prompt.md", "utf-8");
 
@@ -27,8 +35,8 @@ async function aiResponse(filepath) {
     messages: messages,
     model: "deepseek-ai/DeepSeek-V3",
     max_tokens: null,
-    temperature: 0.1,
     timeout: null,
+    temperature: 0.1,
     top_p: 0.5,
     top_k: 50,
   });
@@ -72,15 +80,14 @@ async function aiEdit(dialog) {
   const response = await together.chat.completions.create({
     messages: dialog.message,
     model: "deepseek-ai/DeepSeek-V3",
-    max_tokens: null,
     temperature: 0.1,
+    max_tokens: null,
     timeout: null,
     top_p: 0.5,
     top_k: 50,
   });
 
   const data = response.choices[0].message.content.trim();
-
   const relativePath = path.relative(process.cwd(), dialog.file);
   const newFilePath = path.join("./out-js", relativePath);
 
@@ -118,6 +125,7 @@ async function startEdit(dialogs) {
     const select = await rl.question("Take a number: ");
 
     if (select == 0) {
+      await fs.rm("./temp", { recursive: true, force: true });
       rl.close();
       break;
     }
@@ -130,18 +138,33 @@ async function startEdit(dialogs) {
 }
 
 // Асинхронное добавление комментариев к файлам
+async function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function makeComments(files) {
-  const promises = files.map((file) => {
-    console.log(`Start comment ${file}`);
+  const promises = [];
 
-    return aiResponse(file);
-  });
+  for (let i = 0; i < files.length; i++) {
+    console.log(`Start comment ${files[i]}`);
 
-  const messages = await Promise.all(
-    promises.map((p) =>
-      p.catch((err) => console.error("Error processing file:", err))
-    )
-  );
+    const promise = aiResponse(files[i])
+      .then((result) => result)
+      .catch((err) => {
+        console.error(`Error processing file: ${files[i]}`, err.message);
+        return null; // Return null instead of undefined on error
+      });
+
+    promises.push(promise);
+
+    // Enforce 6 requests per minute (pause for 1 minute after every 6 requests)
+    if ((i + 1) % 6 === 0) {
+      console.log("Rate limit reached, waiting for 1 minute...");
+      await delay(60000); // Wait 1 minute
+    }
+  }
+
+  const messages = (await Promise.all(promises)).filter((msg) => msg !== null); // Filter out null values
 
   await generateDocs();
 
@@ -187,12 +210,36 @@ async function generateDocs() {
   );
 }
 
+// Функция для разделения всех файлов в указанной директории
+async function splitFilesInDirectory(inputDir, outputDir) {
+  const files = await readFiles(inputDir);
+
+  for (const file of files) {
+    console.log(`Processing file: ${file}`);
+    const relativePath = path.relative(inputDir, file);
+    const tempOutputDir = path.join(outputDir, path.dirname(relativePath));
+
+    await fs.mkdir(tempOutputDir, { recursive: true });
+    await splitLargeFile(file, tempOutputDir);
+  }
+
+  console.log(`All files have been processed and saved to ${outputDir}`);
+}
+
+// Удаление папки temp, если она существует
+async function removeTempDirectory() {
+  const tempDir = "./temp";
+  try {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  } catch (err) {
+    console.error(`Error removing directory ${tempDir}:`, err.message);
+  }
+}
+
+await removeTempDirectory();
+// Пример использования функции
+await splitFilesInDirectory("./inputs-js/", "./temp/");
 // Программа берёт файлы с указанной директории
-const files = await readFiles("./inputs-js/");
+const files = await readFiles("./temp/");
 
 await makeComments(files);
-
-//todo
-//проверку чтобы в окончательном файле был весь данный
-//диалог
-//понять куда делся таймаут
