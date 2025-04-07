@@ -8,10 +8,10 @@ import { splitLargeFile } from "./div.js";
 
 const openai = new OpenAI({
   baseURL: "https://api.deepseek.com",
-  apiKey: process.env.KEY,
+  apiKey: process.env.KEY2,
 });
 
-const together = new Together({ apiKey: process.env.KEY2 });
+const together = new Together({ apiKey: process.env.KEY });
 
 const sysPrompt = await fs.readFile("prompt.md", "utf-8");
 
