@@ -5,6 +5,7 @@ Requirements:
 
 - Provide concise and direct documentation without unnecessary explanations.
 - Tag abstract classes with @abstract.
+- Describe getters and setters with single comment
 - Accepts only a JavaScript file as input.
 - Respond only with JavaScript code (do not wrap it in code blocks like '''javascript ... ''').
 - Write clear and simple comments in English, ensuring that an average developer can easily understand them.

@@ -7,6 +7,7 @@
     "start": "node -r dotenv/config main.js"
   },
   "author": "Xrinerio",
+  "author": "sekva.net",
   "license": "ISC",
   "description": "AI-Powered JSDoc Comment Generator",
   "dependencies": {
