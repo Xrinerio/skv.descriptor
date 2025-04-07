@@ -13,7 +13,7 @@
     "@babel/generator": "^7.27.0",
     "better-docs": "^2.7.3",
     "jsdoc": "^4.0.4",
-    "openai": "^4.89.1",
+    "openai": "4.89.1",
     "together-ai": "^0.13.0"
   },
   "devDependencies": {
