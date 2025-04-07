@@ -61,9 +61,7 @@ coverage/
 *.local
 
 #dev files
-hard/
-pref/
-pref.js
 out-js/
-pref.js
-inputs-js/..
+docs/
+inputs-js/
+
