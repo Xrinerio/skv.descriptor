@@ -1,11 +1,10 @@
 import Together from "together-ai";
+import OpenAI from "openai";
 import fs from "fs/promises";
 import path from "path";
 import { exec } from "child_process";
 import { createInterface } from "node:readline/promises";
 import { splitLargeFile } from "./div.js";
-
-import OpenAI from "openai";
 
 const openai = new OpenAI({
   baseURL: "https://api.deepseek.com",
@@ -152,19 +151,18 @@ async function makeComments(files) {
       .then((result) => result)
       .catch((err) => {
         console.error(`Error processing file: ${files[i]}`, err.message);
-        return null; // Return null instead of undefined on error
+        return null;
       });
 
     promises.push(promise);
 
-    // Enforce 6 requests per minute (pause for 1 minute after every 6 requests)
     if ((i + 1) % 6 === 0) {
       console.log("Rate limit reached, waiting for 1 minute...");
       await delay(60000); // Wait 1 minute
     }
   }
 
-  const messages = (await Promise.all(promises)).filter((msg) => msg !== null); // Filter out null values
+  const messages = (await Promise.all(promises)).filter((msg) => msg !== null);
 
   await generateDocs();
 
