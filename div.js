@@ -6,7 +6,7 @@ import { generate } from "@babel/generator";
 export function splitLargeFile(
   inputFilePath,
   outputDir,
-  maxFileSize = 1024 * 4
+  maxFileSize = 1024 * 3
 ) {
   const fileContent = fs.readFileSync(inputFilePath, "utf-8");
   const ast = babelParser.parse(fileContent, {
