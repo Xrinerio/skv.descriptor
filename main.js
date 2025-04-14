@@ -6,10 +6,10 @@ import { exec } from "child_process";
 import { createInterface } from "node:readline/promises";
 import { splitLargeFile } from "./div.js";
 
-const openai = new OpenAI({
-  baseURL: "https://api.deepseek.com",
-  apiKey: process.env.KEY2,
-});
+// const openai = new OpenAI({
+//   baseURL: "https://api.deepseek.com",
+//   apiKey: process.env.KEY2,
+// });
 
 const together = new Together({ apiKey: process.env.KEY });
 
