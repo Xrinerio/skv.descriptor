@@ -1,10 +1,10 @@
 ## 0. Functional
 
--- Commenting javascript code using external GPT resources.
+- Commenting javascript code using external GPT resources.
 
 ## 1. Name
 
--- skv.descriptor
+- skv.descriptor
 
 ## 2. The authors
 
